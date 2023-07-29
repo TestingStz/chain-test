@@ -1,22 +1,26 @@
-name: Create Issue in Main Repo
+name: Create Info File in Main Repo
 on:
   issues:
     types: [opened]
 
 jobs:
-  create_issue:
+  create_info_file:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Create Issue in Main Repo
+      - name: Create Info File in Main Repo
         env:
           MAIN_REPO_TOKEN: ${{ secrets.ISSUES_BB }}
           MAIN_REPO: TestingStz/Bug_Bounty_v1
         run: |
           TITLE=$(jq -r '.issue.title' $GITHUB_EVENT_PATH)
           BODY=$(jq -r '.issue.body' $GITHUB_EVENT_PATH)
-          curl -X POST -H "Authorization: token $MAIN_REPO_TOKEN" \
-          -d "{\"title\":\"[External Issue] $TITLE\",\"body\":\"$BODY\"}" \
-          "https://api.github.com/repos/$MAIN_REPO/issues"
+          echo "## $TITLE" > info_file.md
+          echo "$BODY" >> info_file.md
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add info_file.md
+          git commit -m "Add info_file.md"
+          git push "https://$MAIN_REPO_TOKEN@github.com/$MAIN_REPO.git" HEAD:main
