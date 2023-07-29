@@ -17,10 +17,10 @@ jobs:
           BB_REPO_TOKEN: ${{ secrets.ISSUES_BB }}
           BB_REPO: TestingStz/Bug_Bounty_v1
         run: |
-          ISSUE_NUMBER=$(jq -r '.issue.number' ${{ github.event_path }})
-          ISSUE_TITLE=$(jq -r '.issue.title' ${{ github.event_path }})
-          ISSUE_BODY=$(jq -r '.issue.body' ${{ github.event_path }})
-          ISSUE_STATE=$(jq -r '.issue.state' ${{ github.event_path }})
+          ISSUE_NUMBER=$(jq -r '.issue.number' "${{ github.event_path }}")
+          ISSUE_TITLE=$(jq -r '.issue.title' "${{ github.event_path }}")
+          ISSUE_BODY=$(jq -r '.issue.body' "${{ github.event_path }}")
+          ISSUE_STATE=$(jq -r '.issue.state' "${{ github.event_path }}")
           
           if [ "$ISSUE_STATE" != "closed" ]; then
             FILENAME="issue${ISSUE_NUMBER}.md"
