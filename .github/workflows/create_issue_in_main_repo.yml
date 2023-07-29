@@ -1,22 +1,42 @@
-name: Create/Update/Close Issue in Main Repo
+name: Mirror Issues to Bug_Bounty_v1
 on:
   issues:
     types: [opened, edited, reopened, closed]
+  issue_comment:
+    types: [created, edited, deleted]
 
 jobs:
-  create_issue:
+  mirror_issues:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Create Issue in Main Repo
+      - name: Create or Update Issue File in Bug_Bounty_v1
         env:
-          MAIN_REPO_TOKEN: ${{ secrets.ISSUES_BB }}
-          MAIN_REPO: TestingStz/Bug_Bounty_v1
+          BB_REPO_TOKEN: ${{ secrets.ISSUES_BB_TOKEN }}
+          BB_REPO: TestingStz/Bug_Bounty_v1
         run: |
-          TITLE=$(jq -r '.issue.title' ${{ github.event_path }})
-          BODY=$(jq -r '.issue.body' ${{ github.event_path }})
-          curl -X POST -H "Authorization: token $MAIN_REPO_TOKEN" \
-          -d "{\"title\":\"[External Issue] $TITLE\",\"body\":\"$BODY\"}" \
-          "https://api.github.com/repos/$MAIN_REPO/issues"
+          ISSUE_NUMBER=$(jq -r '.issue.number' ${{ github.event_path }})
+          ISSUE_TITLE=$(jq -r '.issue.title' ${{ github.event_path }})
+          ISSUE_BODY=$(jq -r '.issue.body' ${{ github.event_path }})
+          ISSUE_STATE=$(jq -r '.issue.state' ${{ github.event_path }})
+          
+          if [ "$ISSUE_STATE" != "closed" ]; then
+            FILENAME="issue${ISSUE_NUMBER}.md"
+            echo "## $ISSUE_TITLE" > $FILENAME
+            echo "$ISSUE_BODY" >> $FILENAME
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add $FILENAME
+            git commit -m "Mirror Issue #$ISSUE_NUMBER to Bug_Bounty_v1"
+            git push "https://$BB_REPO_TOKEN@github.com/$BB_REPO.git" HEAD:main
+          else
+            FILENAME="issue${ISSUE_NUMBER}.md"
+            if [ -f "$FILENAME" ]; then
+              git rm $FILENAME
+              git commit -m "Remove Issue #$ISSUE_NUMBER from Bug_Bounty_v1"
+              git push "https://$BB_REPO_TOKEN@github.com/$BB_REPO.git" HEAD:main
+            fi
+          fi
