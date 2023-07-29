@@ -12,7 +12,7 @@ jobs:
 
       - name: Create or Update Issue File in Bug_Bounty_v1
         env:
-          BB_REPO_TOKEN: ${{ secrets.ISSUES_BB_TOKEN }}
+          BB_REPO_TOKEN: ${{ secrets.ISSUES_BB }
           BB_REPO: TestingStz/Bug_Bounty_v1
         run: |
           ISSUE_NUMBER=$(jq -r '.issue.number' $GITHUB_EVENT_PATH)
