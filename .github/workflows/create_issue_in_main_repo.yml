@@ -1,31 +1,40 @@
-name: Create Info File in Main Repo
+name: Mirror Issues to Bug_Bounty_v1
 on:
   issues:
-    types: [opened]
+    types: [opened, edited, reopened, closed, labeled, unlabeled]
 
 jobs:
-  create_info_file:
+  mirror_issues:
     runs-on: ubuntu-latest
     steps:
-      - name: Use Node.js 16
-        uses: actions/setup-node@v2
-        with:
-          node-version: 16
-
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Create Info File in Main Repo
+      - name: Create or Update Issue File in Bug_Bounty_v1
         env:
-          MAIN_REPO_TOKEN: ${{ secrets.ISSUES_BB }}
-          MAIN_REPO: TestingStz/Bug_Bounty_v1
+          BB_REPO_TOKEN: ${{ secrets.ISSUES_BB_TOKEN }}
+          BB_REPO: TestingStz/Bug_Bounty_v1
         run: |
-          TITLE=$(jq -r '.issue.title' $GITHUB_EVENT_PATH)
-          BODY=$(jq -r '.issue.body' $GITHUB_EVENT_PATH)
-          echo "## $TITLE" > info_file.md
-          echo "$BODY" >> info_file.md
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add info_file.md
-          git commit -m "Add info_file.md"
-          git push "https://$MAIN_REPO_TOKEN@github.com/$MAIN_REPO.git" HEAD:main
+          ISSUE_NUMBER=$(jq -r '.issue.number' $GITHUB_EVENT_PATH)
+          ISSUE_TITLE=$(jq -r '.issue.title' $GITHUB_EVENT_PATH)
+          ISSUE_BODY=$(jq -r '.issue.body' $GITHUB_EVENT_PATH)
+          ISSUE_STATE=$(jq -r '.issue.state' $GITHUB_EVENT_PATH)
+          
+          if [ "$ISSUE_STATE" != "closed" ]; then
+            FILENAME="issue${ISSUE_NUMBER}.md"
+            echo "## $ISSUE_TITLE" > $FILENAME
+            echo "$ISSUE_BODY" >> $FILENAME
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add $FILENAME
+            git commit -m "Mirror Issue #$ISSUE_NUMBER to Bug_Bounty_v1"
+            git push "https://$BB_REPO_TOKEN@github.com/$BB_REPO.git" HEAD:main
+          else
+            FILENAME="issue${ISSUE_NUMBER}.md"
+            if [ -f "$FILENAME" ]; then
+              git rm $FILENAME
+              git commit -m "Remove Issue #$ISSUE_NUMBER from Bug_Bounty_v1"
+              git push "https://$BB_REPO_TOKEN@github.com/$BB_REPO.git" HEAD:main
+            fi
+          fi
