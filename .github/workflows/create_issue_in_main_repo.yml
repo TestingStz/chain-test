@@ -1,7 +1,7 @@
-name: Create Issue in Main Repo
+name: Create/Update/Close Issue in Main Repo
 on:
   issues:
-    types: [opened]
+    types: [opened, edited, reopened, closed]
 
 jobs:
   create_issue:
